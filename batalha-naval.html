@@ -1,0 +1,180 @@
+<html>
+<a id="jogador-1">Você:</a>
+<div id="campo-1">
+</div>
+<br>
+<br>
+<a id="jogador-2">Oponente:</a>
+<div id="campo-2">
+</div>
+
+</html>
+<style>
+    button {
+        border: 1px solid #DCDCDC;
+    }
+</style>
+<script type="text/javascript">
+    //Variaveis de definições
+    var debug = true;
+    var colunas = 10; //Colunas do campo
+    var linhas = 10; //Linhas do campo
+    var tentativas = (colunas * linhas) * (2 / 100); //Tentativas equivale a 2% do tamanho total do campo
+    var vez_jogador = 0; //0 = jogador 1, 1 = jogador 2
+    var jogador_acertou = [0, 0]; //Acertos do jogador, 0 = jogador 1, 1 = jogador 2
+
+    //Tipos de objetos
+    TiposObjetos = {
+        disponivel: 0,
+        destruido: 1,
+        navio: 2,
+        navio_destruido: 3
+    }
+
+    //função criar matriz
+    function criar_matrix(linha, coluna) {
+        var matrix = new Array(linha);
+        for (var i = 0; i < linha; i++) {
+            matrix[i] = new Array(coluna);
+        }
+        return matrix;
+    }
+
+    //Cria a matriz do campo 1
+    var campo_1 = criar_matrix(linhas, colunas);
+
+    //Cria a matriz do campo 2
+    var campo_2 = criar_matrix(linhas, colunas);
+
+    function desenhar_campo(linha, coluna, campo, jogador) {
+        //variavel de saida
+        var saida = "";
+
+        //Cordenadas horizontais
+        for (var col = 0; col < coluna; col++) {
+            saida += ("<a style=\"padding-left:" + ((2.5 * coluna) + 1) + "px;\">" + col + ": </a>");
+        }
+
+        saida += ("<br>");
+
+        for (var lin = 0; lin < linha; lin++) {
+            //Cordenadas verticais
+            saida += (lin + ": ");
+
+            for (var col = 0; col < coluna; col++) {
+
+                switch (campo[lin][col]) {
+                    case TiposObjetos.destruido: //errou
+                        saida += ("<button style=\"padding:20px;background-color:gray\" onclick=\"atirar(" + Array(lin, col, jogador) + ")\" disabled> </button>");
+                        break;
+                    case TiposObjetos.navio: //objeto
+                        saida += ("<button style=\"padding:20px;background-color:LightCoral\" onclick=\"atirar(" + Array(lin, col, jogador) + ")\"> </button>");
+                        break;
+                    case TiposObjetos.navio_destruido: //acertou
+                        saida += ("<button style=\"padding:20px;background-color:red\" onclick=\"atirar(" + Array(lin, col, jogador) + ")\" disabled> </button>");
+                        break;
+                    default: //nada
+                        saida += ("<button style=\"padding:20px;background-color:AliceBlue\" onclick=\"atirar(" + Array(lin, col, jogador) + ")\"> </button>");
+                        break;
+                }
+            }
+
+            saida += ("<br>");
+        }
+
+        return saida;
+    }
+
+    function atirar(linha, coluna, jogador) {
+        //se a vez do jogador for diferente do jogador, então retorna
+        if (vez_jogador != jogador) {
+            return;
+        }
+
+        //Condional ternaria para selecionar o campo
+        var campo = (jogador == 0) ? campo_2 : campo_1;
+
+        //Verifica se acertou o alvo
+        var acertou = (campo[linha][coluna] == TiposObjetos.navio) ? true : false;
+
+        //Condional verificar se o jogador acertou ou errou
+        if (acertou) {
+            campo[linha][coluna] = TiposObjetos.navio_destruido;
+            jogador_acertou[jogador]++;
+        }
+        else {
+            campo[linha][coluna] = TiposObjetos.destruido;
+        }
+
+        //Verifica se o jogador acertou todos os alvos
+        if (jogador_acertou[jogador] == tentativas) {
+            //Atualiza no fim do jogo
+            atualizar_interface();
+
+            //Mostrar ganhador
+            alert("Jogador " + (jogador + 1) + " GANHOU essa rodada!");
+
+            //fim de jogo
+            return;
+        }
+
+        //Diz se o jogador acertou ou errou
+        console.log("Jogador " + (jogador + 1) + (acertou ? " Acertou!" : " Errou!"));
+
+        //troca a vez do jogador
+        vez_jogador = !vez_jogador;
+
+        //Atualiza a interface toda a vez que algum jogador atira
+        atualizar_interface();
+
+    }
+
+    function atualizar_interface() {
+        //Jogadores
+        document.getElementById("jogador-1").text = (vez_jogador == 0) ? "Você (sua vez):" : "Você:";
+        document.getElementById("jogador-2").text = (vez_jogador == 1) ? "Oponente (sua vez):" : "Oponente:";
+
+        //Desenha o campo do jogador 1
+        document.getElementById("campo-1").innerHTML = desenhar_campo(linhas, colunas, campo_1, 1);
+
+        //Desenha o campo do jogador 2
+        document.getElementById("campo-2").innerHTML = desenhar_campo(linhas, colunas, campo_2, 0);
+    }
+
+
+    //Laço de repetição com a quantidade de jogadores
+    for (var j = 1; j <= 2; j++) {
+
+        //Laço de repetição com a quantidade de tentativas
+        for (var i = 1; i <= tentativas; i++) {
+
+            //Escolhe o campo de acordo com o jogador
+            var campo = (j == 1) ? campo_1 : campo_2;
+
+            //Entradas de valores
+            var horizontal = parseInt(prompt("Jogador " + j + ", escolha a posição horizontal do seu navio " + i + "!\nEscolha um valor entre 0 e " + (colunas - 1)));
+            var vertical = parseInt(prompt("Jogador " + j + ", escolha a posição vertical do seu navio " + i + "!\nEscolha um valor entre 0 e " + (linhas - 1)));
+
+            //Verifica se a posição é válida
+            if (horizontal >= 0 && horizontal < colunas && vertical >= 0 && vertical < linhas) {
+                //Verifica se a posição está ocupada
+                if (campo[vertical][horizontal] == TiposObjetos.navio) {
+                    alert("Nessa posição já tem um navio! Escolha outra!");
+                    i--;
+                }
+                else {
+                    //Define posição
+                    campo[vertical][horizontal] = TiposObjetos.navio;
+                }
+            }
+            else {
+                alert("Posição invalida, escolha uma posição dentro do limite permitido!");
+                i--;
+            }
+        }
+    }
+
+    //Atualiza a interface ao iniciar o jogo
+    atualizar_interface();
+
+</script>
